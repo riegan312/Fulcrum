@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Noto+Sans+SC:wght@700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: theme('colors.ink');
+  background: theme('colors.abyss');
+}
+
+* {
+  border-color: theme('colors.stroke-soft');
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: theme('fontFamily.sans');
+  background: theme('colors.abyss');
+  color: theme('colors.ink');
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.data-mono {
+  font-family: theme('fontFamily.mono');
+}
+
+.panel {
+  @apply rounded-xl border border-stroke-soft bg-surface-1 shadow-glow;
+}
+
+.subtle-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.brand-cn {
+  font-family: 'Noto Sans SC', theme('fontFamily.sans');
+  font-weight: 800;
+}
+
+.brand-en {
+  font-family: 'JetBrains Mono', theme('fontFamily.mono');
+  font-weight: 500;
+}
