@@ -55,6 +55,17 @@ export function GuestQuotaModal({ open, onClose, onConfirm }) {
           请先关注公众号并发送“验证码”，收到 6 位数字后填入下方。验证通过后即可注册并继续使用。
         </p>
 
+        <div className="mt-4 rounded-lg border border-gray-800 bg-[#0E1015] p-3">
+          <img
+            src="/wechat-verify-qr.jpg"
+            alt="公众号二维码"
+            className="mx-auto h-48 w-48 rounded-md border border-gray-700 object-cover"
+          />
+          <p className="mt-2 text-center text-xs text-zinc-500">
+            微信扫码关注后，发送“验证码”
+          </p>
+        </div>
+
         <div className="mt-4">
           <label className="mb-1 block text-xs text-zinc-500">微信验证码</label>
           <input
