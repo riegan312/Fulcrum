@@ -45,6 +45,11 @@ function ensureGuestQuota() {
   return quota
 }
 
+function generateDefaultUsername() {
+  const nineDigits = Math.floor(100000000 + Math.random() * 900000000)
+  return `用户${nineDigits}`
+}
+
 function appendHistory(storeKey, entry, uid = '') {
   const payload = {
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -67,6 +72,7 @@ function appendHistory(storeKey, entry, uid = '') {
 export function UsageAccessProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userId, setUserId] = useState('')
+  const [username, setUsername] = useState('')
   const [accountQuota, setAccountQuota] = useState(DEFAULT_REGISTER_BONUS)
   const [guestQuota, setGuestQuota] = useState(DEFAULT_GUEST_QUOTA)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
@@ -77,14 +83,26 @@ export function UsageAccessProvider({ children }) {
 
     const session = readJson(AUTH_SESSION_KEY, null)
     if (session?.uid) {
+      const restoredUsername =
+        typeof session.username === 'string' && session.username.trim()
+          ? session.username.trim()
+          : generateDefaultUsername()
+
       setIsAuthenticated(true)
       setUserId(String(session.uid))
+      setUsername(restoredUsername)
       setAccountQuota(normalizeQuota(session.accountQuota, DEFAULT_REGISTER_BONUS))
+      writeJson(AUTH_SESSION_KEY, {
+        uid: String(session.uid),
+        username: restoredUsername,
+        accountQuota: normalizeQuota(session.accountQuota, DEFAULT_REGISTER_BONUS),
+      })
       return
     }
 
     setIsAuthenticated(false)
     setUserId('')
+    setUsername('')
     setAccountQuota(DEFAULT_REGISTER_BONUS)
     setGuestQuota(ensureGuestQuota())
   }, [])
@@ -118,7 +136,7 @@ export function UsageAccessProvider({ children }) {
 
     const nextQuota = normalizeQuota(data?.remaining, 0)
     setAccountQuota(nextQuota)
-    writeJson(AUTH_SESSION_KEY, { uid: userId, accountQuota: nextQuota })
+    writeJson(AUTH_SESSION_KEY, { uid: userId, username, accountQuota: nextQuota })
   }
 
   async function runWithQuota(meta, task) {
@@ -133,7 +151,15 @@ export function UsageAccessProvider({ children }) {
     }
 
     if (isAuthenticated && userId) {
-      await deductAccountQuota()
+      try {
+        await deductAccountQuota()
+      } catch (error) {
+        const message = error?.message || '账号额度校验失败，请稍后重试。'
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+          window.alert(message)
+        }
+        return false
+      }
       await task()
       appendHistory(USER_HISTORY_STORE_KEY, { ...entry, source: 'account' }, userId)
       return true
@@ -155,6 +181,7 @@ export function UsageAccessProvider({ children }) {
 
   function completeGuestRegistration() {
     const uid = `uid_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+    const nextUsername = generateDefaultUsername()
     const guestHistory = readJson(GUEST_HISTORY_KEY, [])
     const allUsers = readJson(USER_HISTORY_STORE_KEY, {})
     const existing = Array.isArray(allUsers[uid]) ? allUsers[uid] : []
@@ -162,9 +189,14 @@ export function UsageAccessProvider({ children }) {
     writeJson(USER_HISTORY_STORE_KEY, allUsers)
 
     localStorage.removeItem(GUEST_HISTORY_KEY)
-    writeJson(AUTH_SESSION_KEY, { uid, accountQuota: DEFAULT_REGISTER_BONUS })
+    writeJson(AUTH_SESSION_KEY, {
+      uid,
+      username: nextUsername,
+      accountQuota: DEFAULT_REGISTER_BONUS,
+    })
 
     setUserId(uid)
+    setUsername(nextUsername)
     setAccountQuota(DEFAULT_REGISTER_BONUS)
     setIsAuthenticated(true)
     setIsAuthModalOpen(false)
@@ -174,6 +206,7 @@ export function UsageAccessProvider({ children }) {
     localStorage.removeItem(AUTH_SESSION_KEY)
     setIsAuthenticated(false)
     setUserId('')
+    setUsername('')
     setAccountQuota(DEFAULT_REGISTER_BONUS)
     setGuestQuota(ensureGuestQuota())
   }
@@ -183,6 +216,7 @@ export function UsageAccessProvider({ children }) {
       isAuthenticated,
       isAdminMode,
       userId,
+      username,
       accountQuota,
       guestQuota,
       isAuthModalOpen,
@@ -192,7 +226,7 @@ export function UsageAccessProvider({ children }) {
       runWithQuota,
       logout,
     }),
-    [isAuthenticated, isAdminMode, userId, accountQuota, guestQuota, isAuthModalOpen]
+    [isAuthenticated, isAdminMode, userId, username, accountQuota, guestQuota, isAuthModalOpen]
   )
 
   return <UsageAccessContext.Provider value={value}>{children}</UsageAccessContext.Provider>

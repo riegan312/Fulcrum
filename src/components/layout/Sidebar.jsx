@@ -3,7 +3,7 @@ import { SidebarNavItem } from '../navigation/SidebarNavItem'
 import { useUsageAccess } from '../../features/access/UsageAccessContext'
 
 export function Sidebar({ categories, activeCategoryId, onCategoryChange }) {
-  const { isAuthenticated, isAdminMode, guestQuota, accountQuota, openAuthModal, logout } =
+  const { isAuthenticated, isAdminMode, username, guestQuota, accountQuota, openAuthModal, logout } =
     useUsageAccess()
   const isLastTrial = !isAuthenticated && guestQuota === 1
 
@@ -46,7 +46,7 @@ export function Sidebar({ categories, activeCategoryId, onCategoryChange }) {
               </>
             ) : isAuthenticated ? (
               <>
-                <p className="truncate text-sm font-medium text-ink">已登录用户</p>
+                <p className="truncate text-sm font-medium text-ink">{username || '已登录用户'}</p>
                 <p className="data-mono text-xs text-ink-dim">
                   账号额度剩余：{String(accountQuota).padStart(3, '0')} 次
                 </p>
